@@ -1,0 +1,33 @@
+<!--File2PromptConverter/src/templates/index.html-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>File Uploader</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
+</head>
+<body>
+    <div class="container">
+        <h1>File Upload</h1>
+        <form id="upload-form" enctype="multipart/form-data">
+            <input type="file" name="files" id="fileInput" multiple>
+            <button type="submit">Upload</button>
+        </form>
+        <div id="uploaded-files"></div>
+        <div id="result-container" style="display: none;">
+            <h2>Result</h2>
+            <textarea id="resultText" rows="20"></textarea><br>
+            <div class="button-group">
+                <button onclick="copyToClipboard()">Copy to Clipboard</button>
+                <button onclick="resetForm()" class="reset-button">Reset</button>
+            </div>
+        </div>
+        <div id="toast" class="toast" style="display: none;">
+            Text copied.
+        </div>
+    </div>
+    <script src="/static/scripts.js"></script>
+</body>
+</html>
