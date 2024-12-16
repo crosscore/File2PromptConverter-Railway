@@ -9,25 +9,55 @@
     <link rel="shortcut icon" type="image/x-icon" href="/static/favicon.ico">
 </head>
 <body>
-    <div class="container">
-        <h1>File Upload</h1>
-        <form id="upload-form" enctype="multipart/form-data">
-            <input type="file" name="files" id="fileInput" multiple>
-            <button type="submit">Upload</button>
-        </form>
-        <div id="uploaded-files"></div>
-        <div id="result-container" style="display: none;">
-            <h2>Result</h2>
-            <textarea id="resultText" rows="20"></textarea><br>
-            <div class="button-group">
-                <button onclick="copyToClipboard()">Copy to Clipboard</button>
-                <button onclick="resetForm()" class="reset-button">Reset</button>
+    <div class="main-container">
+        <!-- 左側：履歴一覧 -->
+        <div class="history-panel">
+            <div class="history-header">
+                <h2>History</h2>
+                <button id="deleteAllBtn" class="delete-all-btn">Delete All</button>
+            </div>
+            <div id="history-list" class="history-list">
+                <!-- 履歴項目がJavaScriptで動的に追加されます -->
             </div>
         </div>
-        <div id="toast" class="toast" style="display: none;">
-            Text copied.
+
+        <!-- 右側：メインコンテンツ -->
+        <div class="content-panel">
+            <h1>File Upload</h1>
+            <form id="upload-form" enctype="multipart/form-data">
+                <input type="file" name="files" id="fileInput" multiple>
+                <button type="submit">Upload</button>
+            </form>
+            <div id="uploaded-files"></div>
+            <div id="result-container" style="display: none;">
+                <h2>Result</h2>
+                <textarea id="resultText" rows="20"></textarea><br>
+                <div class="button-group">
+                    <button onclick="copyToClipboard()">Copy to Clipboard</button>
+                    <button onclick="saveContent()" class="save-button">Save</button>
+                    <button onclick="resetForm()" class="reset-button">Reset</button>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- 確認ダイアログ -->
+    <div id="confirmDialog" class="dialog-overlay" style="display: none;">
+        <div class="dialog-content">
+            <h3>Confirmation</h3>
+            <p>Are you sure you want to delete all history?</p>
+            <div class="dialog-buttons">
+                <button onclick="confirmDeleteAll()">Yes</button>
+                <button onclick="closeDialog()">No</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知 -->
+    <div id="toast" class="toast" style="display: none;">
+        Text copied.
+    </div>
+
     <script src="/static/scripts.js"></script>
 </body>
 </html>
