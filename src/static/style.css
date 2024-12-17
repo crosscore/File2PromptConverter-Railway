@@ -6,21 +6,28 @@ body {
     color: #eee;
     margin: 0;
     padding: 20px;
+    min-height: 100vh;
+    overflow: hidden;
 }
 
 .main-container {
     display: flex;
     gap: 20px;
-    max-width: 1400px;
+    max-width: 1800px;
     margin: 0 auto;
+    height: calc(100vh - 40px);
 }
 
-/* 履歴パネル */
+/* 履歴パネル（左列） */
 .history-panel {
-    width: 300px;
+    flex: 1;  /* 1:2:3の比率の "1" */
+    min-width: 250px;
     background-color: #333;
     border-radius: 5px;
     padding: 15px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
 .history-header {
@@ -32,11 +39,13 @@ body {
 
 .history-header h2 {
     margin: 0;
+    font-size: 1.5em;
 }
 
 .history-list {
+    flex: 1;
     overflow-y: auto;
-    max-height: calc(100vh - 150px);
+    padding-right: 5px;
 }
 
 .history-item {
@@ -61,78 +70,182 @@ body {
     margin: 5px 0;
 }
 
-.history-item .actions {
-    text-align: right;
-}
-
-.delete-btn {
-    background-color: #d32f2f;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    padding: 4px 8px;
-    cursor: pointer;
-    font-size: 0.8em;
-}
-
-.delete-all-btn {
-    background-color: #d32f2f;
-    color: white;
-    border: none;
-    border-radius: 3px;
-    padding: 6px 12px;
-    cursor: pointer;
-}
-
-/* メインコンテンツパネル */
-.content-panel {
-    flex-grow: 1;
+/* ファイル操作パネル（中列） */
+.file-operation-panel {
+    flex: 2;  /* 1:2:3の比率の "2" */
+    min-width: 250px;
     background-color: #333;
     border-radius: 5px;
-    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
 }
 
-/* フォームコンポーネント */
-input[type="file"] {
-    margin-bottom: 10px;
+.drop-zone {
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    border: 2px dashed transparent;
+    transition: all 0.3s ease;
+}
+
+.drop-zone.drag-over {
+    background-color: #3a3a3a;
+    border-color: #008CBA;
+}
+
+.drop-zone-message {
+    text-align: center;
+    color: #aaa;
+    margin: 20px 0;
+}
+
+.selected-files-list {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.file-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     background-color: #444;
-    padding: 10px;
+    padding: 8px 12px;
+    margin-bottom: 8px;
     border-radius: 4px;
-    width: calc(100% - 20px);
+    transition: background-color 0.2s ease;
 }
 
+.file-item:hover {
+    background-color: #555;
+}
+
+.file-item .file-name {
+    flex-grow: 1;
+    margin-right: 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.file-actions {
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    background-color: #333;
+    border-top: 1px solid #444;
+}
+
+/* 結果表示パネル（右列） */
+.result-panel {
+    flex: 3;  /* 1:2:3の比率の "3" */
+    min-width: 250px;
+    background-color: #333;
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.result-header {
+    padding: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.result-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+}
+
+.result-content {
+    flex: 1;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+textarea {
+    flex: 1;
+    background-color: #444;
+    color: #eee;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 10px;
+    font-family: monospace;
+    font-size: 14px;
+    line-height: 1.4;
+    resize: none;
+}
+
+.result-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+/* ボタンスタイル */
 button {
     background-color: #008CBA;
     color: white;
-    padding: 10px 20px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 5px;
+    border-radius: 4px;
     cursor: pointer;
-    margin-right: 10px;
+    font-size: 14px;
+    min-width: 80px;
+    transition: all 0.2s ease;
 }
 
-button:hover {
+button:hover:not(:disabled) {
     opacity: 0.9;
+}
+
+button:disabled {
+    background-color: #555;
+    cursor: not-allowed;
+    opacity: 0.7;
 }
 
 .save-button {
     background-color: #4CAF50;
 }
 
-.reset-button {
-    background-color: #f44336;
+.delete-btn {
+    background-color: #d32f2f;
 }
 
-/* テキストエリア */
-textarea {
-    width: 100%;
-    box-sizing: border-box;
-    margin-bottom: 10px;
-    background-color: #444;
-    color: #eee;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 10px;
+.delete-all-btn {
+    background-color: #d32f2f;
+    padding: 6px 12px;
+}
+
+.file-item .remove-file {
+    background-color: transparent;
+    color: #ff4444;
+    padding: 4px 8px;
+    min-width: auto;
+    font-size: 1.2em;
+    opacity: 0.7;
+}
+
+.file-item .remove-file:hover {
+    opacity: 1;
+    color: #ff6666;
+}
+
+/* ファイル選択ボタン */
+.select-files-btn {
+    align-self: center;
+    background-color: #008CBA;
+}
+
+.hidden-file-input {
+    display: none;
 }
 
 /* ダイアログ */
@@ -163,7 +276,7 @@ textarea {
     margin-top: 20px;
 }
 
-/* トースト */
+/* トースト通知 */
 .toast {
     position: fixed;
     bottom: 20px;
@@ -181,4 +294,53 @@ textarea {
 
 .toast.show {
     opacity: 1;
+}
+
+/* スクロールバースタイル */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #333;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 1024px) {
+    .main-container {
+        flex-direction: column;
+        height: auto;
+        gap: 15px;
+    }
+
+    .history-panel,
+    .file-operation-panel,
+    .result-panel {
+        width: 100%;
+        flex: none;
+    }
+
+    .history-panel {
+        height: 300px;
+    }
+
+    .file-operation-panel {
+        height: 400px;
+    }
+
+    .result-panel {
+        height: calc(100vh - 800px);
+        min-height: 400px;
+    }
 }

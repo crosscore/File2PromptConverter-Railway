@@ -1,10 +1,12 @@
-// File2PromptConverter/src/templates/scripts.js
+// File2PromptConverter/src/static/scripts.js
 
 // DOM Elements
 const elements = {
-  form: document.getElementById('upload-form'),
   fileInput: document.getElementById('fileInput'),
-  uploadedFiles: document.getElementById('uploaded-files'),
+  dropArea: document.getElementById('dropArea'),
+  selectedFilesList: document.getElementById('selected-files-list'),
+  uploadBtn: document.getElementById('uploadBtn'),
+  resetBtn: document.getElementById('resetBtn'),
   resultContainer: document.getElementById('result-container'),
   resultText: document.getElementById('resultText'),
   toast: document.getElementById('toast'),
@@ -12,6 +14,153 @@ const elements = {
   deleteAllBtn: document.getElementById('deleteAllBtn'),
   confirmDialog: document.getElementById('confirmDialog')
 };
+
+// 選択されたファイルを保持するSet
+const selectedFiles = new Set();
+
+// ファイル入力トリガー
+function triggerFileInput() {
+  elements.fileInput.click();
+}
+
+// ファイルの追加処理
+function addFiles(files) {
+  for (const file of files) {
+      selectedFiles.add(file);
+  }
+  updateFilesList();
+  updateButtonStates();
+}
+
+// ファイルの削除処理
+function removeFile(fileName) {
+  for (const file of selectedFiles) {
+      if (file.name === fileName) {
+          selectedFiles.delete(file);
+          break;
+      }
+  }
+  updateFilesList();
+  updateButtonStates();
+}
+
+// ファイルリストの更新
+function updateFilesList() {
+  elements.selectedFilesList.innerHTML = '';
+
+  if (selectedFiles.size === 0) {
+      // ファイルが選択されていない場合はメッセージを表示
+      showDropZoneMessage(true);
+      return;
+  }
+
+  // メッセージを非表示
+  showDropZoneMessage(false);
+
+  // ファイルリストの表示
+  for (const file of selectedFiles) {
+      const fileItem = document.createElement('div');
+      fileItem.className = 'file-item';
+      fileItem.innerHTML = `
+          <span class="file-name" title="${file.name}">${file.name}</span>
+          <button class="remove-file" onclick="removeFile('${file.name}')" title="Remove file">&times;</button>
+      `;
+      elements.selectedFilesList.appendChild(fileItem);
+  }
+}
+
+// ドロップゾーンメッセージの表示/非表示
+function showDropZoneMessage(show) {
+  const existingMessage = elements.dropArea.querySelector('.drop-zone-message');
+  if (show && !existingMessage) {
+      const message = document.createElement('div');
+      message.className = 'drop-zone-message';
+      message.innerHTML = `
+          <p>ドラッグ＆ドロップでファイルを追加</p>
+          <p>または</p>
+          <button type="button" onclick="triggerFileInput()" class="select-files-btn">ファイルを選択</button>
+      `;
+      elements.dropArea.insertBefore(message, elements.selectedFilesList);
+  } else if (!show && existingMessage) {
+      existingMessage.remove();
+  }
+}
+
+// ボタンの状態更新
+function updateButtonStates() {
+  const hasFiles = selectedFiles.size > 0;
+  const hasResult = elements.resultContainer.style.display !== 'none';
+
+  elements.uploadBtn.disabled = !hasFiles;
+  elements.resetBtn.disabled = (!hasFiles && !hasResult);
+}
+
+// ファイルの全削除
+function resetFiles() {
+  selectedFiles.clear();
+  elements.fileInput.value = '';
+  updateFilesList();
+  updateButtonStates();
+  elements.resultContainer.style.display = 'none';
+  showDropZoneMessage(true);
+}
+
+// ファイルアップロード処理
+async function handleUpload() {
+  const formData = new FormData();
+  for (const file of selectedFiles) {
+      formData.append('files', file);
+  }
+
+  try {
+      const response = await fetch('/upload', {
+          method: 'POST',
+          body: formData
+      });
+
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+      const resultText = await response.text();
+      elements.resultText.value = resultText;
+      elements.resultContainer.style.display = 'flex';
+  } catch (error) {
+      console.error('Error:', error);
+      showToast('Error uploading files: ' + error.message, 'error');
+  }
+}
+
+// ドラッグ&ドロップイベントハンドラ
+function handleDragOver(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  elements.dropArea.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  const rect = elements.dropArea.getBoundingClientRect();
+  const isLeaving =
+      e.clientX <= rect.left ||
+      e.clientX >= rect.right ||
+      e.clientY <= rect.top ||
+      e.clientY >= rect.bottom;
+
+  if (isLeaving) {
+      elements.dropArea.classList.remove('drag-over');
+  }
+}
+
+function handleDrop(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  elements.dropArea.classList.remove('drag-over');
+
+  const dt = e.dataTransfer;
+  const files = dt.files;
+
+  addFiles(files);
+}
 
 // 履歴の読み込みと表示
 async function loadHistory() {
@@ -66,7 +215,7 @@ async function loadHistoryItem(id) {
 
       const data = await response.json();
       elements.resultText.value = data.content;
-      elements.resultContainer.style.display = 'block';
+      elements.resultContainer.style.display = 'flex';
       showToast('Data loaded successfully');
   } catch (error) {
       console.error('Error loading data:', error);
@@ -80,7 +229,7 @@ async function deleteHistoryItem(id) {
       const response = await fetch(`/data/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete data');
 
-      await loadHistory(); // 履歴を再読み込み
+      await loadHistory();
       showToast('Data deleted successfully');
   } catch (error) {
       console.error('Error deleting data:', error);
@@ -88,7 +237,35 @@ async function deleteHistoryItem(id) {
   }
 }
 
-// 全履歴削除の確認ダイアログを表示
+// コンテンツの保存
+async function saveContent() {
+  if (!selectedFiles.size) {
+      showToast('No files to save', 'error');
+      return;
+  }
+
+  const formData = new FormData();
+  for (const file of selectedFiles) {
+      formData.append('files', file);
+  }
+
+  try {
+      const response = await fetch('/save', {
+          method: 'POST',
+          body: formData
+      });
+
+      if (!response.ok) throw new Error('Failed to save data');
+
+      await loadHistory();
+      showToast('Data saved successfully');
+  } catch (error) {
+      console.error('Error saving data:', error);
+      showToast('Failed to save data', 'error');
+  }
+}
+
+// 確認ダイアログを表示
 function showDeleteAllDialog() {
   elements.confirmDialog.style.display = 'flex';
 }
@@ -99,7 +276,7 @@ async function confirmDeleteAll() {
       const response = await fetch('/data', { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete all data');
 
-      await loadHistory(); // 履歴を再読み込み
+      await loadHistory();
       closeDialog();
       showToast('All data deleted successfully');
   } catch (error) {
@@ -113,73 +290,6 @@ function closeDialog() {
   elements.confirmDialog.style.display = 'none';
 }
 
-// コンテンツの保存
-async function saveContent() {
-  if (!elements.resultText.value) {
-      showToast('No content to save', 'error');
-      return;
-  }
-
-  const formData = new FormData();
-  for (const file of elements.fileInput.files) {
-      formData.append('files', file);
-  }
-
-  try {
-      const response = await fetch('/save', {
-          method: 'POST',
-          body: formData
-      });
-
-      if (!response.ok) throw new Error('Failed to save data');
-
-      const result = await response.json();
-      await loadHistory(); // 履歴を再読み込み
-      showToast('Data saved successfully');
-  } catch (error) {
-      console.error('Error saving data:', error);
-      showToast('Failed to save data', 'error');
-  }
-}
-
-// File Display Handler
-function displayFileNames() {
-  elements.uploadedFiles.innerHTML = '';
-
-  if (elements.fileInput.files.length > 0) {
-      const fileNames = Array.from(elements.fileInput.files)
-          .map(file => file.name)
-          .join(', ');
-      elements.uploadedFiles.textContent = 'Selected files: ' + fileNames;
-  }
-}
-
-// File Upload Handler
-async function handleFileUpload(event) {
-  event.preventDefault();
-
-  const formData = new FormData();
-  for (const file of elements.fileInput.files) {
-      formData.append('files', file);
-  }
-
-  try {
-      const response = await fetch('/upload', {
-          method: 'POST',
-          body: formData
-      });
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-
-      const resultText = await response.text();
-      elements.resultText.value = resultText;
-      elements.resultContainer.style.display = 'block';
-  } catch (error) {
-      console.error('Error:', error);
-      showToast('Error uploading files: ' + error.message, 'error');
-  }
-}
-
 // クリップボードにコピー
 async function copyToClipboard() {
   try {
@@ -189,14 +299,6 @@ async function copyToClipboard() {
       console.error('Failed to copy text: ', err);
       showToast('Failed to copy text', 'error');
   }
-}
-
-// フォームのリセット
-function resetForm() {
-  elements.fileInput.value = '';
-  elements.uploadedFiles.innerHTML = '';
-  elements.resultText.value = '';
-  elements.resultContainer.style.display = 'none';
 }
 
 // トースト表示
@@ -219,8 +321,20 @@ function showToast(message, type = 'success', duration = 2400) {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', () => {
-  elements.form.addEventListener('submit', handleFileUpload);
-  elements.fileInput.addEventListener('change', displayFileNames);
+  // ドロップゾーンイベント
+  elements.dropArea.addEventListener('dragover', handleDragOver);
+  elements.dropArea.addEventListener('dragleave', handleDragLeave);
+  elements.dropArea.addEventListener('drop', handleDrop);
+
+  // ファイル選択イベント
+  elements.fileInput.addEventListener('change', (e) => {
+      addFiles(e.target.files);
+  });
+
+  // 履歴関連
   elements.deleteAllBtn.addEventListener('click', showDeleteAllDialog);
-  loadHistory(); // 初期読み込み
+
+  // 初期表示
+  showDropZoneMessage(true);
+  loadHistory();
 });
