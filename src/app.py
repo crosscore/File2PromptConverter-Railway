@@ -1,4 +1,4 @@
-# src/app.py
+# File2PromptConverter/src/app.py
 import os
 from fastapi import FastAPI, File, UploadFile, Request, HTTPException
 from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse

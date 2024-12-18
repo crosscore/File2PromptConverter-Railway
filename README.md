@@ -1,5 +1,6 @@
 # File2PromptConverter
 
+```
 File2PromptConverter/          # プロジェクトルート
 ├── main.py                    # エントリーポイント
 ├── requirements.txt
@@ -11,10 +12,12 @@ File2PromptConverter/          # プロジェクトルート
     ├── app.py                 # FastAPIアプリケーション本体
     ├── utils/                 # ユーティリティモジュール
     │   ├── __init__.py
+    │   ├── data_manager.py    # 履歴管理クラス
     │   └── file_processor.py  # ファイル処理クラス
     ├── static/                # 静的ファイル
     │   ├── style.css
     │   ├── scripts.js         # クライアントサイドスクリプト
-    │   └── favicon.ico        
+    │   └── favicon.ico
     └── templates/             # HTMLテンプレート
         └── index.html         # メインページ
+```

@@ -30,6 +30,7 @@ function addFiles(files) {
   }
   updateFilesList();
   updateButtonStates();
+  updateDropZoneState();
 }
 
 // ファイルの削除処理
@@ -42,22 +43,42 @@ function removeFile(fileName) {
   }
   updateFilesList();
   updateButtonStates();
+  updateDropZoneState();
+}
+
+// ドロップゾーンの状態更新
+function updateDropZoneState() {
+  const hasFiles = selectedFiles.size > 0;
+  const dropZone = elements.dropArea;
+
+  // 既存のメッセージ要素を取得
+  let messageElem = dropZone.querySelector('.drop-zone-message');
+
+  // メッセージ要素が存在しない場合は作成
+  if (!messageElem) {
+      messageElem = document.createElement('div');
+      messageElem.className = 'drop-zone-message';
+      dropZone.insertBefore(messageElem, elements.selectedFilesList);
+  }
+
+  // メッセージ内容の更新
+  messageElem.innerHTML = `
+      ${!hasFiles ? '<p>ドラッグ＆ドロップでファイルを追加</p>' : ''}
+      <button type="button" onclick="triggerFileInput()" class="select-files-btn">ファイルを選択</button>
+  `;
+
+  // ファイルが存在する場合のスタイル適用
+  if (hasFiles) {
+      messageElem.classList.add('with-files');
+  } else {
+      messageElem.classList.remove('with-files');
+  }
 }
 
 // ファイルリストの更新
 function updateFilesList() {
   elements.selectedFilesList.innerHTML = '';
 
-  if (selectedFiles.size === 0) {
-      // ファイルが選択されていない場合はメッセージを表示
-      showDropZoneMessage(true);
-      return;
-  }
-
-  // メッセージを非表示
-  showDropZoneMessage(false);
-
-  // ファイルリストの表示
   for (const file of selectedFiles) {
       const fileItem = document.createElement('div');
       fileItem.className = 'file-item';
@@ -66,23 +87,6 @@ function updateFilesList() {
           <button class="remove-file" onclick="removeFile('${file.name}')" title="Remove file">&times;</button>
       `;
       elements.selectedFilesList.appendChild(fileItem);
-  }
-}
-
-// ドロップゾーンメッセージの表示/非表示
-function showDropZoneMessage(show) {
-  const existingMessage = elements.dropArea.querySelector('.drop-zone-message');
-  if (show && !existingMessage) {
-      const message = document.createElement('div');
-      message.className = 'drop-zone-message';
-      message.innerHTML = `
-          <p>ドラッグ＆ドロップでファイルを追加</p>
-          <p>または</p>
-          <button type="button" onclick="triggerFileInput()" class="select-files-btn">ファイルを選択</button>
-      `;
-      elements.dropArea.insertBefore(message, elements.selectedFilesList);
-  } else if (!show && existingMessage) {
-      existingMessage.remove();
   }
 }
 
@@ -102,7 +106,7 @@ function resetFiles() {
   updateFilesList();
   updateButtonStates();
   elements.resultContainer.style.display = 'none';
-  showDropZoneMessage(true);
+  updateDropZoneState();
 }
 
 // ファイルアップロード処理
@@ -290,26 +294,38 @@ function closeDialog() {
   elements.confirmDialog.style.display = 'none';
 }
 
-// クリップボードにコピー
-async function copyToClipboard() {
+// テキストのコピー
+function copyToClipboard() {
   try {
-      await navigator.clipboard.writeText(elements.resultText.value);
-      showToast('Copied to clipboard');
+      const copyButton = document.querySelector('.result-actions button:first-child');
+      const originalText = copyButton.textContent;
+
+      elements.resultText.select();
+      document.execCommand('copy');
+      window.getSelection().removeAllRanges();
+
+      // ボタンの状態を変更（幅は変化しない）
+      copyButton.textContent = 'Copied!';
+      copyButton.classList.add('copy-success');
+
+      setTimeout(() => {
+          copyButton.textContent = originalText;
+          copyButton.classList.remove('copy-success');
+      }, 1500);
   } catch (err) {
-      console.error('Failed to copy text: ', err);
-      showToast('Failed to copy text', 'error');
+      console.error('Failed to copy text:', err);
   }
 }
 
 // トースト表示
-function showToast(message, type = 'success', duration = 2400) {
+function showToast(message, type = 'success', duration = 3000) {
   elements.toast.textContent = message;
   elements.toast.style.backgroundColor = type === 'error' ? '#d32f2f' : '#333';
   elements.toast.style.display = 'block';
 
   setTimeout(() => {
       elements.toast.classList.add('show');
-  }, 10);
+  }, 50);
 
   setTimeout(() => {
       elements.toast.classList.remove('show');
@@ -334,7 +350,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // 履歴関連
   elements.deleteAllBtn.addEventListener('click', showDeleteAllDialog);
 
+  // コピーボタンの初期幅を設定
+  const copyButton = document.querySelector('.result-actions button:first-child');
+  if (copyButton) {
+      const initialWidth = copyButton.offsetWidth;
+      copyButton.style.width = `${initialWidth}px`;
+  }
+
   // 初期表示
-  showDropZoneMessage(true);
+  updateDropZoneState();
   loadHistory();
 });

@@ -1,4 +1,4 @@
-# utils/file_processor.py
+# File2PromptConverter/src/utils/file_processor.py
 """
 ファイル処理に関する機能を提供するモジュール
 """

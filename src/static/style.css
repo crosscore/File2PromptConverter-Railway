@@ -90,6 +90,7 @@ body {
     gap: 15px;
     border: 2px dashed transparent;
     transition: all 0.3s ease;
+    position: relative;
 }
 
 .drop-zone.drag-over {
@@ -98,15 +99,50 @@ body {
 }
 
 .drop-zone-message {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
     text-align: center;
-    color: #aaa;
-    margin: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    transition: all 0.3s ease;
+    pointer-events: auto;
+    z-index: 20;
+}
+
+/* ファイルが存在する場合のメッセージスタイル */
+.drop-zone-message.with-files {
+    background: rgba(51, 51, 51, 0.7);
+    backdrop-filter: blur(2px);
+    padding: 10px;
+    top: auto;
+    bottom: 20px;
+    transform: none;
+    margin: 0;
+    z-index: 20;
+}
+
+.drop-zone-message.with-files .select-files-btn {
+    background-color: rgba(0, 140, 186, 0.8);
+    backdrop-filter: blur(2px);
+    transition: all 0.3s ease;
+}
+
+.drop-zone-message.with-files .select-files-btn:hover {
+    background-color: rgba(0, 140, 186, 1);
 }
 
 .selected-files-list {
     flex: 1;
     overflow-y: auto;
     padding-right: 5px;
+    position: relative;
+    z-index: 1;
 }
 
 .file-item {
@@ -343,4 +379,11 @@ button:disabled {
         height: calc(100vh - 800px);
         min-height: 400px;
     }
+}
+
+/* コピー成功時のスタイルバリエーション */
+.copy-success {
+    background-color: #E67E22 !important;
+    pointer-events: none;
+    transition: background-color 0.3s ease;
 }
