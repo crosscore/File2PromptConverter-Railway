@@ -136,6 +136,6 @@ class FileProcessor:
         else:
             formatted_content = content
 
-        file_header = f"# File: {filename}\n```{lang_identifier}\n"
+        file_header = f"# {filename}\n```{lang_identifier}\n"
         file_footer = "\n```\n"
         return f"{file_header}{formatted_content}{file_footer}"
