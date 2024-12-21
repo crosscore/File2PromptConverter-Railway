@@ -1,5 +1,49 @@
 // File2PromptConverter/src/static/scripts.js
 
+// ButtonFeedback クラスの定義
+class ButtonFeedback {
+  constructor(button) {
+      this.button = button;
+      this.originalText = button.textContent;
+      this.originalColor = button.style.backgroundColor;
+      this.isAnimating = false;
+  }
+
+  async showFeedback(message, type = 'success') {
+      if (this.isAnimating) return;
+      this.isAnimating = true;
+
+      // 元の状態を保存
+      const originalWidth = this.button.offsetWidth;
+      this.button.style.width = `${originalWidth}px`;
+
+      // ボタンの状態を変更
+      this.button.textContent = message;
+      this.button.classList.add('button-feedback');
+
+      // タイプに応じたスタイルを適用
+      if (type === 'success') {
+          this.button.classList.add('feedback-success');
+      } else if (type === 'error') {
+          this.button.classList.add('feedback-error');
+      }
+
+      // ボタンを一時的に無効化
+      this.button.disabled = true;
+
+      // 1.5秒後に元の状態に戻す
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      this.resetState();
+  }
+
+  resetState() {
+      this.button.textContent = this.originalText;
+      this.button.classList.remove('button-feedback', 'feedback-success', 'feedback-error');
+      this.button.disabled = false;
+      this.isAnimating = false;
+  }
+}
+
 // DOM Elements
 const elements = {
   fileInput: document.getElementById('fileInput'),
@@ -9,7 +53,6 @@ const elements = {
   resetBtn: document.getElementById('resetBtn'),
   resultContainer: document.getElementById('result-container'),
   resultText: document.getElementById('resultText'),
-  toast: document.getElementById('toast'),
   historyList: document.getElementById('history-list'),
   deleteAllBtn: document.getElementById('deleteAllBtn'),
   confirmDialog: document.getElementById('confirmDialog')
@@ -51,23 +94,18 @@ function updateDropZoneState() {
   const hasFiles = selectedFiles.size > 0;
   const dropZone = elements.dropArea;
 
-  // 既存のメッセージ要素を取得
   let messageElem = dropZone.querySelector('.drop-zone-message');
-
-  // メッセージ要素が存在しない場合は作成
   if (!messageElem) {
       messageElem = document.createElement('div');
       messageElem.className = 'drop-zone-message';
       dropZone.insertBefore(messageElem, elements.selectedFilesList);
   }
 
-  // メッセージ内容の更新
   messageElem.innerHTML = `
       ${!hasFiles ? '<p>ドラッグ＆ドロップでファイルを追加</p>' : ''}
       <button type="button" onclick="triggerFileInput()" class="select-files-btn">ファイルを選択</button>
   `;
 
-  // ファイルが存在する場合のスタイル適用
   if (hasFiles) {
       messageElem.classList.add('with-files');
   } else {
@@ -111,6 +149,9 @@ function resetFiles() {
 
 // ファイルアップロード処理
 async function handleUpload() {
+  const uploadButton = elements.uploadBtn;
+  const feedback = new ButtonFeedback(uploadButton);
+
   const formData = new FormData();
   for (const file of selectedFiles) {
       formData.append('files', file);
@@ -127,9 +168,10 @@ async function handleUpload() {
       const resultText = await response.text();
       elements.resultText.value = resultText;
       elements.resultContainer.style.display = 'flex';
+      await feedback.showFeedback('Success!', 'success');
   } catch (error) {
       console.error('Error:', error);
-      showToast('Error uploading files: ' + error.message, 'error');
+      await feedback.showFeedback('Failed!', 'error');
   }
 }
 
@@ -176,7 +218,8 @@ async function loadHistory() {
       displayHistory(history);
   } catch (error) {
       console.error('Error loading history:', error);
-      showToast('Failed to load history', 'error');
+      const feedback = new ButtonFeedback(elements.deleteAllBtn);
+      await feedback.showFeedback('Load Failed!', 'error');
   }
 }
 
@@ -213,6 +256,9 @@ function createHistoryItem(item) {
 
 // 特定の履歴アイテムを読み込む
 async function loadHistoryItem(id) {
+  const loadButton = event.target;
+  const feedback = new ButtonFeedback(loadButton);
+
   try {
       const response = await fetch(`/data/${id}`);
       if (!response.ok) throw new Error('Failed to load data');
@@ -220,31 +266,36 @@ async function loadHistoryItem(id) {
       const data = await response.json();
       elements.resultText.value = data.content;
       elements.resultContainer.style.display = 'flex';
-      showToast('Data loaded successfully');
+      await feedback.showFeedback('Loaded!', 'success');
   } catch (error) {
       console.error('Error loading data:', error);
-      showToast('Failed to load data', 'error');
+      await feedback.showFeedback('Failed!', 'error');
   }
 }
 
 // 履歴アイテムの削除
 async function deleteHistoryItem(id) {
+  const deleteButton = event.target;
+  const feedback = new ButtonFeedback(deleteButton);
+
   try {
       const response = await fetch(`/data/${id}`, { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete data');
 
       await loadHistory();
-      showToast('Data deleted successfully');
+      await feedback.showFeedback('Deleted!', 'success');
   } catch (error) {
       console.error('Error deleting data:', error);
-      showToast('Failed to delete data', 'error');
+      await feedback.showFeedback('Failed!', 'error');
   }
 }
 
 // コンテンツの保存
 async function saveContent() {
   if (!selectedFiles.size) {
-      showToast('No files to save', 'error');
+      const saveButton = document.querySelector('.save-button');
+      const feedback = new ButtonFeedback(saveButton);
+      await feedback.showFeedback('No files!', 'error');
       return;
   }
 
@@ -252,6 +303,9 @@ async function saveContent() {
   for (const file of selectedFiles) {
       formData.append('files', file);
   }
+
+  const saveButton = document.querySelector('.save-button');
+  const feedback = new ButtonFeedback(saveButton);
 
   try {
       const response = await fetch('/save', {
@@ -262,10 +316,10 @@ async function saveContent() {
       if (!response.ok) throw new Error('Failed to save data');
 
       await loadHistory();
-      showToast('Data saved successfully');
+      await feedback.showFeedback('Saved!', 'success');
   } catch (error) {
       console.error('Error saving data:', error);
-      showToast('Failed to save data', 'error');
+      await feedback.showFeedback('Failed!', 'error');
   }
 }
 
@@ -276,16 +330,19 @@ function showDeleteAllDialog() {
 
 // 全履歴削除の確認
 async function confirmDeleteAll() {
+  const deleteAllButton = elements.deleteAllBtn;
+  const feedback = new ButtonFeedback(deleteAllButton);
+
   try {
       const response = await fetch('/data', { method: 'DELETE' });
       if (!response.ok) throw new Error('Failed to delete all data');
 
       await loadHistory();
       closeDialog();
-      showToast('All data deleted successfully');
+      await feedback.showFeedback('All Deleted!', 'success');
   } catch (error) {
       console.error('Error deleting all data:', error);
-      showToast('Failed to delete all data', 'error');
+      await feedback.showFeedback('Failed!', 'error');
   }
 }
 
@@ -295,44 +352,19 @@ function closeDialog() {
 }
 
 // テキストのコピー
-function copyToClipboard() {
-  try {
-      const copyButton = document.querySelector('.result-actions button:first-child');
-      const originalText = copyButton.textContent;
+async function copyToClipboard() {
+  const copyButton = document.querySelector('.result-actions button:first-child');
+  const feedback = new ButtonFeedback(copyButton);
 
+  try {
       elements.resultText.select();
       document.execCommand('copy');
       window.getSelection().removeAllRanges();
-
-      // ボタンの状態を変更（幅は変化しない）
-      copyButton.textContent = 'Copied!';
-      copyButton.classList.add('copy-success');
-
-      setTimeout(() => {
-          copyButton.textContent = originalText;
-          copyButton.classList.remove('copy-success');
-      }, 1500);
+      await feedback.showFeedback('Copied!', 'success');
   } catch (err) {
       console.error('Failed to copy text:', err);
+      await feedback.showFeedback('Failed!', 'error');
   }
-}
-
-// トースト表示
-function showToast(message, type = 'success', duration = 3000) {
-  elements.toast.textContent = message;
-  elements.toast.style.backgroundColor = type === 'error' ? '#d32f2f' : '#333';
-  elements.toast.style.display = 'block';
-
-  setTimeout(() => {
-      elements.toast.classList.add('show');
-  }, 50);
-
-  setTimeout(() => {
-      elements.toast.classList.remove('show');
-      setTimeout(() => {
-          elements.toast.style.display = 'none';
-      }, 300);
-  }, duration);
 }
 
 // Event Listeners
@@ -349,13 +381,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // 履歴関連
   elements.deleteAllBtn.addEventListener('click', showDeleteAllDialog);
-
-  // コピーボタンの初期幅を設定
-  const copyButton = document.querySelector('.result-actions button:first-child');
-  if (copyButton) {
-      const initialWidth = copyButton.offsetWidth;
-      copyButton.style.width = `${initialWidth}px`;
-  }
 
   // 初期表示
   updateDropZoneState();

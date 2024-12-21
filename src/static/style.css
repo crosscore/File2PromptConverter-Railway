@@ -312,26 +312,6 @@ button:disabled {
     margin-top: 20px;
 }
 
-/* トースト通知 */
-.toast {
-    position: fixed;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: #333;
-    color: #fff;
-    padding: 12px 24px;
-    border-radius: 4px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1000;
-    opacity: 0;
-    transition: opacity 0.3s ease-in-out;
-}
-
-.toast.show {
-    opacity: 1;
-}
-
 /* スクロールバースタイル */
 ::-webkit-scrollbar {
     width: 8px;
@@ -381,9 +361,16 @@ button:disabled {
     }
 }
 
-/* コピー成功時のスタイルバリエーション */
-.copy-success {
-    background-color: #E67E22 !important;
+/* ボタンフィードバックスタイル */
+.button-feedback {
+    transition: all 0.3s ease;
     pointer-events: none;
-    transition: background-color 0.3s ease;
+}
+
+.button-feedback.feedback-success {
+    background-color: #4CAF50 !important;
+}
+
+.button-feedback.feedback-error {
+    background-color: #d32f2f !important;
 }
