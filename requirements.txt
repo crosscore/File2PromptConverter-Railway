@@ -3,3 +3,4 @@ uvicorn[standard]
 python-multipart
 chardet
 jinja2
+pytz
