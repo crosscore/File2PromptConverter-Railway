@@ -4,6 +4,7 @@ import json
 import uuid
 from typing import Dict, List, Optional
 from datetime import datetime
+import pytz
 
 class DataManager:
     """データの保存と管理を行うクラス"""
@@ -29,7 +30,8 @@ class DataManager:
         Returns:
             str: タイムスタンプとUUIDを組み合わせたファイル名
         """
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        jst = pytz.timezone('Asia/Tokyo')
+        timestamp = datetime.now(jst).strftime('%Y%m%d_%H%M%S')
         unique_id = str(uuid.uuid4())[:8]
         return f"{timestamp}_{unique_id}.json"
 
@@ -45,9 +47,10 @@ class DataManager:
             Dict: 保存したデータの情報
         """
         filename = self._generate_filename()
+        jst = pytz.timezone('Asia/Tokyo')
         data = {
             'id': filename.split('.')[0],
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': datetime.now(jst).isoformat(),
             'original_files': original_filenames,
             'file_count': len(original_filenames),
             'content': content
