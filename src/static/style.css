@@ -374,3 +374,41 @@ button:disabled {
 .button-feedback.feedback-error {
     background-color: #d32f2f !important;
 }
+
+/* ファイルリンクのスタイル */
+.file-link {
+    color: #008CBA;
+    text-decoration: none;
+    margin-right: 10px;
+    transition: all 0.2s ease;
+}
+
+.file-link:hover {
+    color: #00b3e6;
+    text-decoration: underline;
+}
+
+.file-link:last-child {
+    margin-right: 0;
+}
+
+/* ファイル一覧のスタイル調整 */
+.files {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 8px 0;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 768px) {
+    .files {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .file-link {
+        margin-right: 0;
+        display: block;
+    }
+}

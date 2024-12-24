@@ -1,7 +1,7 @@
 # File2PromptConverter/src/app.py
 import os
 from fastapi import FastAPI, File, UploadFile, Request, HTTPException
-from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, JSONResponse, Response
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -103,6 +103,24 @@ async def get_data(data_id: str):
         if data is None:
             raise HTTPException(status_code=404, detail="Data not found")
         return JSONResponse(content=data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/download/{data_id}/{filename}")
+async def download_file(data_id: str, filename: str):
+    """特定のファイルをダウンロード"""
+    try:
+        content = data_manager.get_original_file_content(data_id, filename)
+        if content is None:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        return Response(
+            content=content,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": f"attachment; filename={filename}"
+            }
+        )
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

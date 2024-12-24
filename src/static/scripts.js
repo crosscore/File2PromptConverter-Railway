@@ -239,11 +239,13 @@ function createHistoryItem(item) {
   div.className = 'history-item';
 
   const timestamp = new Date(item.timestamp).toLocaleString();
-  const fileNames = item.original_files.join(', ');
+  const fileLinks = item.original_files.map(filename =>
+      `<a href="#" class="file-link" data-id="${item.id}" data-filename="${filename}">${filename}</a>`
+  ).join(' ');
 
   div.innerHTML = `
       <div class="timestamp">${timestamp}</div>
-      <div class="files">Files: ${fileNames}</div>
+      <div class="files">${fileLinks}</div>
       <div class="file-count">Total files: ${item.file_count}</div>
       <div class="actions">
           <button onclick="loadHistoryItem('${item.id}')" class="load-btn">Load</button>
@@ -251,7 +253,41 @@ function createHistoryItem(item) {
       </div>
   `;
 
+  // ファイルリンクのクリックイベントを追加
+  div.querySelectorAll('.file-link').forEach(link => {
+      link.addEventListener('click', async (e) => {
+          e.preventDefault();
+          await downloadFile(e.target.dataset.id, e.target.dataset.filename);
+      });
+  });
+
   return div;
+}
+
+// ファイルのダウンロード処理
+async function downloadFile(dataId, filename) {
+  try {
+      const response = await fetch(`/download/${dataId}/${filename}`);
+      if (!response.ok) throw new Error('Download failed');
+
+      // レスポンスをBlobとして取得
+      const blob = await response.blob();
+
+      // ダウンロードリンクを作成
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+
+      // クリーンアップ
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+  } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download file');
+  }
 }
 
 // 特定の履歴アイテムを読み込む
